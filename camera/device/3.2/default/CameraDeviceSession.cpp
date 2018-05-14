@@ -393,7 +393,11 @@ void CameraDeviceSession::ResultBatcher::sendBatchShutterCbsLocked(
         return;
     }
 
-    mCallback->notify(batch->mShutterMsgs);
+    auto ret = mCallback->notify(batch->mShutterMsgs);
+    if (!ret.isOk()) {
+        ALOGE("%s: notify shutter transaction failed: %s",
+                __FUNCTION__, ret.description().c_str());
+    }
     batch->mShutterDelivered = true;
     batch->mShutterMsgs.clear();
 }
@@ -563,7 +567,11 @@ void CameraDeviceSession::ResultBatcher::sendBatchMetadataLocked(
 }
 
 void CameraDeviceSession::ResultBatcher::notifySingleMsg(NotifyMsg& msg) {
-    mCallback->notify({msg});
+    auto ret = mCallback->notify({msg});
+    if (!ret.isOk()) {
+        ALOGE("%s: notify transaction failed: %s",
+                __FUNCTION__, ret.description().c_str());
+    }
     return;
 }
 
@@ -645,13 +653,20 @@ void CameraDeviceSession::ResultBatcher::invokeProcessCaptureResultCallback(
                     result.fmqResultSize = result.result.size();
                     result.result.resize(0);
                 } else {
-                    ALOGW("%s: couldn't utilize fmq, fall back to hwbinder", __FUNCTION__);
+                    ALOGW("%s: couldn't utilize fmq, fall back to hwbinder, result size: %zu,"
+                    "shared message queue available size: %zu",
+                        __FUNCTION__, result.result.size(),
+                        mResultMetadataQueue->availableToWrite());
                     result.fmqResultSize = 0;
                 }
             }
         }
     }
-    mCallback->processCaptureResult(results);
+    auto ret = mCallback->processCaptureResult(results);
+    if (!ret.isOk()) {
+        ALOGE("%s: processCaptureResult transaction failed: %s",
+                __FUNCTION__, ret.description().c_str());
+    }
     mProcessCaptureResultLock.unlock();
 }
 

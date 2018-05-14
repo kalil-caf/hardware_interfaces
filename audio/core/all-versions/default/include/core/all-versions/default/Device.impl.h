@@ -25,7 +25,6 @@
 #include <android/log.h>
 
 using ::android::hardware::audio::common::AUDIO_HAL_VERSION::HidlUtils;
-using ::android::hardware::audio::all_versions::implementation::isGainNormalized;
 
 namespace android {
 namespace hardware {
@@ -42,23 +41,7 @@ Device::~Device() {
 }
 
 Result Device::analyzeStatus(const char* funcName, int status) {
-    if (status != 0) {
-        ALOGW("Device %p %s: %s", mDevice, funcName, strerror(-status));
-    }
-    switch (status) {
-        case 0:
-            return Result::OK;
-        case -EINVAL:
-            return Result::INVALID_ARGUMENTS;
-        case -ENODATA:
-            return Result::INVALID_STATE;
-        case -ENODEV:
-            return Result::NOT_INITIALIZED;
-        case -ENOSYS:
-            return Result::NOT_SUPPORTED;
-        default:
-            return Result::INVALID_STATE;
-    }
+    return util::analyzeStatus("Device", funcName, status);
 }
 
 void Device::closeInputStream(audio_stream_in_t* stream) {
@@ -332,8 +315,20 @@ Return<void> Device::debug(const hidl_handle& fd, const hidl_vec<hidl_string>& /
 
 #ifdef AUDIO_HAL_VERSION_4_0
 Return<void> Device::getMicrophones(getMicrophones_cb _hidl_cb) {
-    // TODO return device microphones
-    _hidl_cb(Result::NOT_SUPPORTED, {});
+    Result retval = Result::NOT_SUPPORTED;
+    size_t actual_mics = AUDIO_MICROPHONE_MAX_COUNT;
+    audio_microphone_characteristic_t mic_array[AUDIO_MICROPHONE_MAX_COUNT];
+
+    hidl_vec<MicrophoneInfo> microphones;
+    if (mDevice->get_microphones != NULL &&
+        mDevice->get_microphones(mDevice, &mic_array[0], &actual_mics) == 0) {
+        microphones.resize(actual_mics);
+        for (size_t i = 0; i < actual_mics; ++i) {
+            halToMicrophoneCharacteristics(&microphones[i], mic_array[i]);
+        }
+        retval = Result::OK;
+    }
+    _hidl_cb(retval, microphones);
     return Void();
 }
 

@@ -14,23 +14,33 @@
 # limitations under the License.
 #
 
-###########################################################
-## Remove minor revision from a kernel version. For example,
-## 3.18.0 becomes 3.18.
-## $(1): kernel version
-###########################################################
-define remove-minor-revision
-$(strip $(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(strip $(1))))))
-endef
-
-# $(warning $(call remove-minor-revision,3.18.0))
-
-ifndef LOCAL_MODULE_STEM
-$(error LOCAL_MODULE_STEM must be defined.)
-endif
+##### Input Variables:
+# LOCAL_MODULE: required. Module name for the build system.
+# LOCAL_MODULE_CLASS: optional. Default is ETC.
+# LOCAL_MODULE_PATH: optional. Path of output file. Default is $(TARGET_OUT)/etc/vintf.
+# LOCAL_MODULE_STEM: optional. Name of output file. Default is $(LOCAL_MODULE).
+# LOCAL_SRC_FILES: required. Local source files provided to assemble_vintf
+#       (command line argument -i).
+# LOCAL_GENERATED_SOURCES: optional. Global source files provided to assemble_vintf
+#       (command line argument -i).
+#
+# LOCAL_ADD_VBMETA_VERSION: Use AVBTOOL to add avb version to the output matrix
+#       (corresponds to <avb><vbmeta-version> tag)
+# LOCAL_ASSEMBLE_VINTF_ENV_VARS: Add a list of environment variable names from global variables in
+#       the build system that is lazily evaluated (e.g. PRODUCT_ENFORCE_VINTF_MANIFEST).
+# LOCAL_ASSEMBLE_VINTF_ENV_VARS_OVERRIDE: Add a list of environment variables that is local to
+#       assemble_vintf invocation. Format is "VINTF_ENFORCE_NO_UNUSED_HALS=true".
+# LOCAL_ASSEMBLE_VINTF_FLAGS: Add additional command line arguments to assemble_vintf invocation.
+# LOCAL_KERNEL_CONFIG_DATA_PATHS: Paths to search for kernel config requirements. Format for each is
+#       <kernel version x.y.z>:<path that contains android-base*.cfg>.
+# LOCAL_GEN_FILE_DEPENDENCIES: A list of additional dependencies for the generated file.
 
 ifndef LOCAL_MODULE
-LOCAL_MODULE := framework_$(LOCAL_MODULE_STEM)
+$(error LOCAL_MODULE must be defined.)
+endif
+
+ifndef LOCAL_MODULE_STEM
+LOCAL_MODULE_STEM := $(LOCAL_MODULE)
 endif
 
 ifndef LOCAL_MODULE_CLASS
@@ -67,27 +77,30 @@ endif # BOARD_AVB_ENABLE
 $(GEN): PRIVATE_ENV_VARS += FRAMEWORK_VBMETA_VERSION
 endif # LOCAL_ADD_VBMETA_VERSION
 
-ifneq (,$(strip $(LOCAL_KERNEL_VERSIONS)))
-$(GEN): PRIVATE_KERNEL_CONFIG_DATA := kernel/configs
-$(GEN): PRIVATE_KERNEL_VERSIONS := $(LOCAL_KERNEL_VERSIONS)
-$(GEN): $(foreach version,$(PRIVATE_KERNEL_VERSIONS),\
-    $(wildcard $(PRIVATE_KERNEL_CONFIG_DATA)/android-$(call remove-minor-revision,$(version))/android-base*.cfg))
-$(GEN): PRIVATE_FLAGS += $(foreach version,$(PRIVATE_KERNEL_VERSIONS),\
-    --kernel=$(version):$(call normalize-path-list,\
-        $(wildcard $(PRIVATE_KERNEL_CONFIG_DATA)/android-$(call remove-minor-revision,$(version))/android-base*.cfg)))
+ifneq (,$(strip $(LOCAL_KERNEL_CONFIG_DATA_PATHS)))
+$(GEN): PRIVATE_KERNEL_CONFIG_DATA_PATHS := $(LOCAL_KERNEL_CONFIG_DATA_PATHS)
+$(GEN): $(foreach pair,$(PRIVATE_KERNEL_CONFIG_DATA_PATHS),\
+    $(wildcard $(call word-colon,2,$(pair))/android-base*.cfg))
+$(GEN): PRIVATE_FLAGS += $(foreach pair,$(PRIVATE_KERNEL_CONFIG_DATA_PATHS),\
+	--kernel=$(call word-colon,1,$(pair)):$(call normalize-path-list,\
+		$(wildcard $(call word-colon,2,$(pair))/android-base*.cfg)))
 endif
 
 my_matrix_src_files := \
 	$(addprefix $(LOCAL_PATH)/,$(LOCAL_SRC_FILES)) \
 	$(LOCAL_GENERATED_SOURCES)
 
-ifneq (,$(strip $(LOCAL_WARN_REQUIRED_HALS)))
-$(GEN): PRIVATE_ADDITIONAL_ENV_VARS += PRODUCT_ENFORCE_VINTF_MANIFEST=true
-$(GEN): PRIVATE_COMMAND_TAIL := || (echo $(strip $(LOCAL_WARN_REQUIRED_HALS)) && false)
+$(GEN): PRIVATE_ADDITIONAL_ENV_VARS := $(LOCAL_ASSEMBLE_VINTF_ENV_VARS_OVERRIDE)
+
+ifneq (,$(strip $(LOCAL_ASSEMBLE_VINTF_ERROR_MESSAGE)))
+$(GEN): PRIVATE_COMMAND_TAIL := || (echo $(strip $(LOCAL_ASSEMBLE_VINTF_ERROR_MESSAGE)) && false)
 endif
 
 $(GEN): PRIVATE_SRC_FILES := $(my_matrix_src_files)
 $(GEN): $(my_matrix_src_files) $(HOST_OUT_EXECUTABLES)/assemble_vintf
+	$(foreach varname,$(PRIVATE_ENV_VARS),\
+		$(if $(findstring $(varname),$(PRIVATE_ADDITIONAL_ENV_VARS)),\
+			$(error $(varname) should not be overridden by LOCAL_ASSEMBLE_VINTF_ENV_VARS_OVERRIDE.)))
 	$(foreach varname,$(PRIVATE_ENV_VARS),$(varname)="$($(varname))") \
 		$(PRIVATE_ADDITIONAL_ENV_VARS) \
 		$(HOST_OUT_EXECUTABLES)/assemble_vintf \
@@ -99,14 +112,7 @@ LOCAL_PREBUILT_MODULE_FILE := $(GEN)
 LOCAL_SRC_FILES :=
 LOCAL_GENERATED_SOURCES :=
 
-LOCAL_ADD_VBMETA_VERSION :=
-LOCAL_ASSEMBLE_VINTF_ENV_VARS :=
-LOCAL_ASSEMBLE_VINTF_FLAGS :=
-LOCAL_WARN_REQUIRED_HALS :=
-LOCAL_KERNEL_VERSIONS :=
-LOCAL_GEN_FILE_DEPENDENCIES :=
+include $(LOCAL_PATH)/clear_vars.mk
 my_matrix_src_files :=
 
 include $(BUILD_PREBUILT)
-
-remove-minor-revision :=

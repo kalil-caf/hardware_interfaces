@@ -23,17 +23,15 @@
  * Test IRadio.startNetworkScan() for the response returned.
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
-        .type = ScanType::ONE_SHOT,
-        .interval = 60,
-        .specifiers = {specifier}};
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
+        .type = ScanType::ONE_SHOT, .interval = 60, .specifiers = {specifier}};
 
     Return<void> res = radio_v1_2->startNetworkScan_1_2(serial, request);
     ASSERT_OK(res);
@@ -42,9 +40,9 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan) {
     EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
 
     ALOGI("startNetworkScan, rspInfo.error = %s\n", toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::SIM_ABSENT}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::NONE}));
     }
 }
@@ -53,11 +51,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan) {
  * Test IRadio.startNetworkScan() with invalid specifier.
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidArgument) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
-    V1_2::NetworkScanRequest request = {
-        .type = ScanType::ONE_SHOT,
-        .interval = 60};
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {.type = ScanType::ONE_SHOT,
+                                                                    .interval = 60};
 
     Return<void> res = radio_v1_2->startNetworkScan_1_2(serial, request);
     ASSERT_OK(res);
@@ -67,10 +64,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidArgument) {
 
     ALOGI("startNetworkScan_InvalidArgument, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -80,14 +77,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidArgument) {
  * Test IRadio.startNetworkScan() with invalid interval (lower boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval1) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 4,
         .specifiers = {specifier},
@@ -103,10 +100,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval1) {
 
     ALOGI("startNetworkScan_InvalidInterval1, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -116,14 +113,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval1) {
  * Test IRadio.startNetworkScan() with invalid interval (upper boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 301,
         .specifiers = {specifier},
@@ -139,10 +136,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval2) {
 
     ALOGI("startNetworkScan_InvalidInterval2, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -152,14 +149,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidInterval2) {
  * Test IRadio.startNetworkScan() with invalid max search time (lower boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime1) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -175,10 +172,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime1) {
 
     ALOGI("startNetworkScan_InvalidMaxSearchTime1, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -188,14 +185,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime1) {
  * Test IRadio.startNetworkScan() with invalid max search time (upper boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -211,10 +208,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime2) {
 
     ALOGI("startNetworkScan_InvalidMaxSearchTime2, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -224,14 +221,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidMaxSearchTime2) {
  * Test IRadio.startNetworkScan() with invalid periodicity (lower boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity1) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -247,10 +244,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity1) {
 
     ALOGI("startNetworkScan_InvalidPeriodicity1, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -260,14 +257,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity1) {
  * Test IRadio.startNetworkScan() with invalid periodicity (upper boundary).
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -283,10 +280,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity2) {
 
     ALOGI("startNetworkScan_InvalidPeriodicity2, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::SIM_ABSENT, RadioError::INVALID_ARGUMENTS}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(
             CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::INVALID_ARGUMENTS}));
     }
@@ -296,14 +293,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_InvalidPeriodicity2) {
  * Test IRadio.startNetworkScan() with valid periodicity
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest1) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -319,10 +316,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest1) {
 
     ALOGI("startNetworkScan_InvalidArgument, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::NONE, RadioError::SIM_ABSENT}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::NONE}));
     }
 }
@@ -331,14 +328,14 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest1) {
  * Test IRadio.startNetworkScan() with valid periodicity and plmns
  */
 TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     RadioAccessSpecifier specifier = {
         .radioAccessNetwork = RadioAccessNetworks::GERAN,
         .geranBands = {GeranBands::BAND_450, GeranBands::BAND_480},
         .channels = {1,2}};
 
-    V1_2::NetworkScanRequest request = {
+    ::android::hardware::radio::V1_2::NetworkScanRequest request = {
         .type = ScanType::ONE_SHOT,
         .interval = 60,
         .specifiers = {specifier},
@@ -355,10 +352,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest2) {
 
     ALOGI("startNetworkScan_InvalidArgument, rspInfo.error = %s\n",
           toString(radioRsp_v1_2->rspInfo.error).c_str());
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                      {RadioError::NONE, RadioError::SIM_ABSENT}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error, {RadioError::NONE}));
     }
 }
@@ -367,10 +364,10 @@ TEST_F(RadioHidlTest_v1_2, startNetworkScan_GoodRequest2) {
  * Test IRadio.setIndicationFilter_1_2()
  */
 TEST_F(RadioHidlTest_v1_2, setIndicationFilter_1_2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
-    Return<void> res =
-        radio_v1_2->setIndicationFilter_1_2(serial, static_cast<int>(IndicationFilter::ALL));
+    Return<void> res = radio_v1_2->setIndicationFilter_1_2(
+        serial, static_cast<int>(::android::hardware::radio::V1_2::IndicationFilter::ALL));
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -385,12 +382,12 @@ TEST_F(RadioHidlTest_v1_2, setIndicationFilter_1_2) {
  * Test IRadio.setSignalStrengthReportingCriteria() with invalid hysteresisDb
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_invalidHysteresisDb) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
         serial, 5000,
         10,  // hysteresisDb too large given threshold list deltas
-        {-109, -103, -97, -89}, V1_2::AccessNetwork::GERAN);
+        {-109, -103, -97, -89}, ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -405,10 +402,10 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_invalidHysteresisD
  * Test IRadio.setSignalStrengthReportingCriteria() with empty parameters
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_EmptyParams) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
-    Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(serial, 0, 0, {},
-                                                                      V1_2::AccessNetwork::GERAN);
+    Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
+        serial, 0, 0, {}, ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -423,10 +420,11 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_EmptyParams) {
  * Test IRadio.setSignalStrengthReportingCriteria() for GERAN
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Geran) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
-        serial, 5000, 2, {-109, -103, -97, -89}, V1_2::AccessNetwork::GERAN);
+        serial, 5000, 2, {-109, -103, -97, -89},
+        ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -441,10 +439,11 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Geran) {
  * Test IRadio.setSignalStrengthReportingCriteria() for UTRAN
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Utran) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
-        serial, 5000, 2, {-110, -97, -73, -49, -25}, V1_2::AccessNetwork::UTRAN);
+        serial, 5000, 2, {-110, -97, -73, -49, -25},
+        ::android::hardware::radio::V1_2::AccessNetwork::UTRAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -459,10 +458,11 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Utran) {
  * Test IRadio.setSignalStrengthReportingCriteria() for EUTRAN
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Eutran) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
-        serial, 5000, 2, {-140, -128, -118, -108, -98, -44}, V1_2::AccessNetwork::EUTRAN);
+        serial, 5000, 2, {-140, -128, -118, -108, -98, -44},
+        ::android::hardware::radio::V1_2::AccessNetwork::EUTRAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -477,10 +477,11 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Eutran) {
  * Test IRadio.setSignalStrengthReportingCriteria() for CDMA2000
  */
 TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Cdma2000) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setSignalStrengthReportingCriteria(
-        serial, 5000, 2, {-105, -90, -75, -65}, V1_2::AccessNetwork::CDMA2000);
+        serial, 5000, 2, {-105, -90, -75, -65},
+        ::android::hardware::radio::V1_2::AccessNetwork::CDMA2000);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -495,12 +496,13 @@ TEST_F(RadioHidlTest_v1_2, setSignalStrengthReportingCriteria_Cdma2000) {
  * Test IRadio.setLinkCapacityReportingCriteria() invalid hysteresisDlKbps
  */
 TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_invalidHysteresisDlKbps) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setLinkCapacityReportingCriteria(
         serial, 5000,
         5000,  // hysteresisDlKbps too big for thresholds delta
-        100, {1000, 5000, 10000, 20000}, {500, 1000, 5000, 10000}, V1_2::AccessNetwork::GERAN);
+        100, {1000, 5000, 10000, 20000}, {500, 1000, 5000, 10000},
+        ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -515,12 +517,13 @@ TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_invalidHysteresisDlK
  * Test IRadio.setLinkCapacityReportingCriteria() invalid hysteresisUlKbps
  */
 TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_invalidHysteresisUlKbps) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setLinkCapacityReportingCriteria(
         serial, 5000, 500,
         1000,  // hysteresisUlKbps too big for thresholds delta
-        {1000, 5000, 10000, 20000}, {500, 1000, 5000, 10000}, V1_2::AccessNetwork::GERAN);
+        {1000, 5000, 10000, 20000}, {500, 1000, 5000, 10000},
+        ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -535,10 +538,10 @@ TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_invalidHysteresisUlK
  * Test IRadio.setLinkCapacityReportingCriteria() empty params
  */
 TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_emptyParams) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
-    Return<void> res = radio_v1_2->setLinkCapacityReportingCriteria(serial, 0, 0, 0, {}, {},
-                                                                    V1_2::AccessNetwork::GERAN);
+    Return<void> res = radio_v1_2->setLinkCapacityReportingCriteria(
+        serial, 0, 0, 0, {}, {}, ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -553,11 +556,11 @@ TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_emptyParams) {
  * Test IRadio.setLinkCapacityReportingCriteria() GERAN
  */
 TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_Geran) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
     Return<void> res = radio_v1_2->setLinkCapacityReportingCriteria(
         serial, 5000, 500, 100, {1000, 5000, 10000, 20000}, {500, 1000, 5000, 10000},
-        V1_2::AccessNetwork::GERAN);
+        ::android::hardware::radio::V1_2::AccessNetwork::GERAN);
     ASSERT_OK(res);
     EXPECT_EQ(std::cv_status::no_timeout, wait());
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
@@ -572,9 +575,10 @@ TEST_F(RadioHidlTest_v1_2, setLinkCapacityReportingCriteria_Geran) {
  * Test IRadio.setupDataCall_1_2() for the response returned.
  */
 TEST_F(RadioHidlTest_v1_2, setupDataCall_1_2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
 
-    V1_2::AccessNetwork accessNetwork = V1_2::AccessNetwork::EUTRAN;
+    ::android::hardware::radio::V1_2::AccessNetwork accessNetwork =
+        ::android::hardware::radio::V1_2::AccessNetwork::EUTRAN;
 
     DataProfileInfo dataProfileInfo;
     memset(&dataProfileInfo, 0, sizeof(dataProfileInfo));
@@ -600,7 +604,8 @@ TEST_F(RadioHidlTest_v1_2, setupDataCall_1_2) {
     bool roamingAllowed = false;
     bool isRoaming = false;
 
-    V1_2::DataRequestReason reason = V1_2::DataRequestReason::NORMAL;
+    ::android::hardware::radio::V1_2::DataRequestReason reason =
+        ::android::hardware::radio::V1_2::DataRequestReason::NORMAL;
     std::vector<hidl_string> addresses = {""};
     std::vector<hidl_string> dnses = {""};
 
@@ -613,12 +618,12 @@ TEST_F(RadioHidlTest_v1_2, setupDataCall_1_2) {
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
     EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
 
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(
             radioRsp_v1_2->rspInfo.error,
             {RadioError::SIM_ABSENT, RadioError::RADIO_NOT_AVAILABLE, RadioError::INVALID_ARGUMENTS,
              RadioError::OP_NOT_ALLOWED_BEFORE_REG_TO_NW, RadioError::REQUEST_NOT_SUPPORTED}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(CheckAnyOfErrors(
             radioRsp_v1_2->rspInfo.error,
             {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE, RadioError::INVALID_ARGUMENTS,
@@ -630,9 +635,10 @@ TEST_F(RadioHidlTest_v1_2, setupDataCall_1_2) {
  * Test IRadio.deactivateDataCall_1_2() for the response returned.
  */
 TEST_F(RadioHidlTest_v1_2, deactivateDataCall_1_2) {
-    const int serial = GetRandomSerialNumber();
+    serial = GetRandomSerialNumber();
     int cid = 1;
-    V1_2::DataRequestReason reason = V1_2::DataRequestReason::NORMAL;
+    ::android::hardware::radio::V1_2::DataRequestReason reason =
+        ::android::hardware::radio::V1_2::DataRequestReason::NORMAL;
 
     Return<void> res = radio_v1_2->deactivateDataCall_1_2(serial, cid, reason);
     ASSERT_OK(res);
@@ -641,13 +647,13 @@ TEST_F(RadioHidlTest_v1_2, deactivateDataCall_1_2) {
     EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
     EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
 
-    if (cardStatus.cardState == CardState::ABSENT) {
+    if (cardStatus.base.cardState == CardState::ABSENT) {
         ASSERT_TRUE(CheckAnyOfErrors(
             radioRsp_v1_2->rspInfo.error,
             {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE, RadioError::INVALID_CALL_ID,
              RadioError::INVALID_STATE, RadioError::INVALID_ARGUMENTS,
              RadioError::REQUEST_NOT_SUPPORTED, RadioError::CANCELLED, RadioError::SIM_ABSENT}));
-    } else if (cardStatus.cardState == CardState::PRESENT) {
+    } else if (cardStatus.base.cardState == CardState::PRESENT) {
         ASSERT_TRUE(CheckAnyOfErrors(
             radioRsp_v1_2->rspInfo.error,
             {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE, RadioError::INVALID_CALL_ID,
@@ -672,4 +678,71 @@ TEST_F(RadioHidlTest_v1_2, getCellInfoList_1_2) {
           toString(radioRsp_v1_2->rspInfo.error).c_str());
     ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
                                  {RadioError::NONE, RadioError::NO_NETWORK_FOUND}));
+}
+
+/*
+ * Test IRadio.getVoiceRegistrationState() for the response returned.
+ */
+TEST_F(RadioHidlTest_v1_2, getVoiceRegistrationState) {
+    int serial = GetRandomSerialNumber();
+
+    Return<void> res = radio_v1_2->getVoiceRegistrationState(serial);
+    ASSERT_OK(res);
+    EXPECT_EQ(std::cv_status::no_timeout, wait());
+    EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
+    EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
+
+    ALOGI("getVoiceRegistrationStateResponse_1_2, rspInfo.error = %s\n",
+          toString(radioRsp_v1_2->rspInfo.error).c_str());
+    ASSERT_TRUE(CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
+                                 {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE}));
+}
+
+/*
+ * Test IRadio.getDataRegistrationState() for the response returned.
+ */
+TEST_F(RadioHidlTest_v1_2, getDataRegistrationState) {
+    int serial = GetRandomSerialNumber();
+
+    Return<void> res = radio_v1_2->getDataRegistrationState(serial);
+    ASSERT_OK(res);
+    EXPECT_EQ(std::cv_status::no_timeout, wait());
+    EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
+    EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
+
+    ALOGI("getVoiceRegistrationStateResponse_1_2, rspInfo.error = %s\n",
+          toString(radioRsp_v1_2->rspInfo.error).c_str());
+    ASSERT_TRUE(CheckAnyOfErrors(
+        radioRsp_v1_2->rspInfo.error,
+        {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE, RadioError::NOT_PROVISIONED}));
+}
+
+/*
+ * Test IRadio.getAvailableBandModes() for the response returned.
+ */
+TEST_F(RadioHidlTest_v1_2, getAvailableBandModes) {
+    int serial = GetRandomSerialNumber();
+
+    Return<void> res = radio_v1_2->getAvailableBandModes(serial);
+    ASSERT_OK(res);
+    EXPECT_EQ(std::cv_status::no_timeout, wait());
+    EXPECT_EQ(RadioResponseType::SOLICITED, radioRsp_v1_2->rspInfo.type);
+    EXPECT_EQ(serial, radioRsp_v1_2->rspInfo.serial);
+    ALOGI("getAvailableBandModes, rspInfo.error = %s\n",
+          toString(radioRsp_v1_2->rspInfo.error).c_str());
+    ASSERT_TRUE(
+        CheckAnyOfErrors(radioRsp_v1_2->rspInfo.error,
+                         {RadioError::NONE, RadioError::RADIO_NOT_AVAILABLE, RadioError::MODEM_ERR,
+                          RadioError::INTERNAL_ERR,
+                          // If REQUEST_NOT_SUPPORTED is returned, then it should also be returned
+                          // for setRandMode().
+                          RadioError::REQUEST_NOT_SUPPORTED}));
+    bool hasUnspecifiedBandMode = false;
+    if (radioRsp_v1_2->rspInfo.error == RadioError::NONE) {
+        for (const RadioBandMode& mode : radioRsp_v1_2->radioBandModes) {
+            // Automatic mode selection must be supported
+            if (mode == RadioBandMode::BAND_MODE_UNSPECIFIED) hasUnspecifiedBandMode = true;
+        }
+        ASSERT_TRUE(hasUnspecifiedBandMode);
+    }
 }
