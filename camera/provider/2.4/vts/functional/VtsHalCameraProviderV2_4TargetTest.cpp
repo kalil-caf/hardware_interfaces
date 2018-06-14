@@ -1013,6 +1013,10 @@ bool CameraHidlTest::DeviceCb::processCaptureResultLocked(const CaptureResult& r
 
         isPartialResult =
             (results.partialResult < request->numPartialResults);
+    } else if (resultSize > 0) {
+        request->collectedResult.append(reinterpret_cast<const camera_metadata_t*>(
+                    resultMetadata.data()));
+        isPartialResult = false;
     }
 
     hasInputBufferInRequest = request->hasInputBuffer;
@@ -1157,6 +1161,9 @@ hidl_vec<hidl_string> CameraHidlTest::getCameraDeviceNames(sp<ICameraProvider> p
 TEST_F(CameraHidlTest, noHal1AfterP) {
     constexpr int32_t HAL1_PHASE_OUT_API_LEVEL = 28;
     int32_t firstApiLevel = property_get_int32("ro.product.first_api_level", /*default*/-1);
+    if (firstApiLevel < 0) {
+        firstApiLevel = property_get_int32("ro.build.version.sdk", /*default*/-1);
+    }
     ASSERT_GT(firstApiLevel, 0); // first_api_level must exist
 
     if (firstApiLevel >= HAL1_PHASE_OUT_API_LEVEL) {

@@ -20,6 +20,7 @@
 
 #include <VtsHalHidlTargetTestBase.h>
 #include <android-base/logging.h>
+#include <android-base/strings.h>
 #include <android/hardware/broadcastradio/2.0/IBroadcastRadio.h>
 #include <android/hardware/broadcastradio/2.0/ITunerCallback.h>
 #include <android/hardware/broadcastradio/2.0/ITunerSession.h>
@@ -65,6 +66,8 @@ static constexpr auto tune = 30s;
 static constexpr auto programListScan = 5min;
 
 }  // namespace timeout
+
+static constexpr auto gTuneWorkaround = 200ms;
 
 static const ConfigFlag gConfigFlagValues[] = {
     ConfigFlag::FORCE_MONO,
@@ -134,28 +137,37 @@ TunerCallbackMock::TunerCallbackMock() {
 }
 
 Return<void> TunerCallbackMock::onCurrentProgramInfoChanged(const ProgramInfo& info) {
-    auto logically = utils::getType(info.logicallyTunedTo);
-    if (logically != IdentifierType::INVALID) {
-        EXPECT_TRUE(logically == IdentifierType::AMFM_FREQUENCY ||
-                    logically == IdentifierType::RDS_PI ||
-                    logically == IdentifierType::HD_STATION_ID_EXT ||
-                    logically == IdentifierType::DAB_SID_EXT ||
-                    logically == IdentifierType::DRMO_SERVICE_ID ||
-                    logically == IdentifierType::SXM_SERVICE_ID ||
-                    (logically >= IdentifierType::VENDOR_START &&
-                     logically <= IdentifierType::VENDOR_END) ||
-                    logically > IdentifierType::SXM_CHANNEL);
+    for (auto&& id : info.selector) {
+        EXPECT_NE(IdentifierType::INVALID, utils::getType(id));
     }
 
+    auto logically = utils::getType(info.logicallyTunedTo);
+    /* This field is required for currently tuned program and should be INVALID
+     * for entries from the program list.
+     */
+    EXPECT_TRUE(
+        logically == IdentifierType::AMFM_FREQUENCY || logically == IdentifierType::RDS_PI ||
+        logically == IdentifierType::HD_STATION_ID_EXT ||
+        logically == IdentifierType::DAB_SID_EXT || logically == IdentifierType::DRMO_SERVICE_ID ||
+        logically == IdentifierType::SXM_SERVICE_ID ||
+        (logically >= IdentifierType::VENDOR_START && logically <= IdentifierType::VENDOR_END) ||
+        logically > IdentifierType::SXM_CHANNEL);
+
     auto physically = utils::getType(info.physicallyTunedTo);
-    if (physically != IdentifierType::INVALID) {
-        EXPECT_TRUE(physically == IdentifierType::AMFM_FREQUENCY ||
-                    physically == IdentifierType::DAB_ENSEMBLE ||
-                    physically == IdentifierType::DRMO_FREQUENCY ||
-                    physically == IdentifierType::SXM_CHANNEL ||
-                    (physically >= IdentifierType::VENDOR_START &&
-                     physically <= IdentifierType::VENDOR_END) ||
-                    physically > IdentifierType::SXM_CHANNEL);
+    // ditto (see "logically" above)
+    EXPECT_TRUE(
+        physically == IdentifierType::AMFM_FREQUENCY ||
+        physically == IdentifierType::DAB_ENSEMBLE ||
+        physically == IdentifierType::DRMO_FREQUENCY || physically == IdentifierType::SXM_CHANNEL ||
+        (physically >= IdentifierType::VENDOR_START && physically <= IdentifierType::VENDOR_END) ||
+        physically > IdentifierType::SXM_CHANNEL);
+
+    if (logically == IdentifierType::AMFM_FREQUENCY) {
+        auto ps = utils::getMetadataString(info, MetadataKey::RDS_PS);
+        if (ps.has_value()) {
+            EXPECT_NE("", android::base::Trim(*ps))
+                << "Don't use empty RDS_PS as an indicator of missing RSD PS data.";
+        }
     }
 
     return onCurrentProgramInfoChanged_(info);
@@ -414,7 +426,7 @@ TEST_F(BroadcastRadioHalTest, FmTune) {
      * This sleep workaround will fix default implementation, but the real HW tests will still be
      * flaky. We probably need to implement egmock alternative based on actions.
      */
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(gTuneWorkaround);
 
     // try tuning
     ProgramInfo infoCb = {};
@@ -500,7 +512,7 @@ TEST_F(BroadcastRadioHalTest, Scan) {
     ASSERT_TRUE(openSession());
 
     // TODO(b/69958777): see FmTune workaround
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(gTuneWorkaround);
 
     EXPECT_TIMEOUT_CALL(*mCallback, onCurrentProgramInfoChanged_, _);
     auto result = mSession->scan(true /* up */, true /* skip subchannel */);
@@ -525,7 +537,7 @@ TEST_F(BroadcastRadioHalTest, Step) {
     ASSERT_TRUE(openSession());
 
     // TODO(b/69958777): see FmTune workaround
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(gTuneWorkaround);
 
     EXPECT_TIMEOUT_CALL(*mCallback, onCurrentProgramInfoChanged_, _).Times(AnyNumber());
     auto result = mSession->step(true /* up */);
