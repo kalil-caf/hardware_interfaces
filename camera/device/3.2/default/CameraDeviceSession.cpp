@@ -869,12 +869,12 @@ bool CameraDeviceSession::preProcessConfigurationLocked(
                     mStreamMap[id].data_space);
             mCirculatingBuffers.emplace(stream.mId, CirculatingBuffers{});
         } else {
-            // width/height/format must not change, but usage/rotation might need to change
+            // width/height must not change, but usage/rotation might need to change
+            // format might change and get updated with overrideFormat
             if (mStreamMap[id].stream_type !=
                     (int) requestedConfiguration.streams[i].streamType ||
                     mStreamMap[id].width != requestedConfiguration.streams[i].width ||
                     mStreamMap[id].height != requestedConfiguration.streams[i].height ||
-                    mStreamMap[id].format != (int) requestedConfiguration.streams[i].format ||
                     mStreamMap[id].data_space !=
                             mapToLegacyDataspace( static_cast<android_dataspace_t> (
                                     requestedConfiguration.streams[i].dataSpace))) {
@@ -1391,6 +1391,8 @@ void CameraDeviceSession::sShrinkCaptureResult(
         std::vector<const camera_metadata_t*>* physCamMdArray,
         bool handlePhysCam) {
     *dst = *src;
+    // Reserve maximum number of entries to avoid metadata re-allocation.
+    mds->reserve(1 + (handlePhysCam ? src->num_physcam_metadata : 0));
     if (sShouldShrink(src->result)) {
         mds->emplace_back(sCreateCompactCopy(src->result));
         dst->result = mds->back().getAndLock();
